@@ -1,0 +1,1293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.10" />
+<title>Asciidoc cheatsheet for GitHub</title><link rel="stylesheet" type="text/css" href="dark.css">
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install(1);
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Asciidoc cheatsheet for GitHub</h1>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph"><p></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_github_limitations">GitHub limitations</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>This cheatsheet contains small part of Asciidoc markup which works and
+looks fine on GitHub. There is also <a href="full.adoc">full cheatsheet</a>, but
+for now it&#8217;s main use is to show bugs, design issues, GitHub limitations
+and other differences from <a href="http://powerman.name/doc/asciidoc">how Asciidoc
+cheatsheet should really looks like</a>.</p></div>
+<div class="paragraph"><p>GitHub Wiki has own limitations, check
+<a href="https://github.com/powerman/asciidoc-cheatsheet/wiki">this cheatsheet in wiki</a>.<br />
+GitHub Gist has own limitations, check
+<a href="https://gist.github.com/powerman/d56b2675dfed38deb298">this cheatsheet in gist</a>.</p></div>
+<div class="paragraph"><p>You can try these browser add-ons to fix some issues:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="https://github.com/powerman/userjs-github-asciidoc">UserJS for GitHub: fix Asciidoc rendering</a>
+</p>
+</li>
+<li>
+<p>
+<a href="https://userstyles.org/styles/113008/github-compact-markdown-asciidoc-lists">UserCSS for GitHub: compact Markdown/Asciidoc lists</a>
+</p>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_attributes">Attributes</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="content">
+<pre><code>// Header of this document:
+
+Asciidoc cheatsheet for GitHub
+==============================
+:toc:
+:toc-placement: preamble
+:toclevels: 1
+:Some attr: Some value
+
+// Need some preamble to get TOC:
+{empty}</code></pre>
+</div></div>
+<div class="paragraph"><p>Some attr&#8217;s value is Some value.
+Escaped: {someattr} and {someattr}.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_section_titles">Section titles</h2>
+<div class="sectionbody">
+</div>
+</div>
+<div class="sect1">
+<h2 id="_level_1">Level 1</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>Text.</p></div>
+<div class="sect2">
+<h3 id="_level_2">Level 2</h3>
+<div class="paragraph"><p>Text.</p></div>
+<div class="sect3">
+<h4 id="_level_3">Level 3</h4>
+<div class="paragraph"><p>Text.</p></div>
+<div class="sect4">
+<h5 id="_level_4">Level 4</h5>
+<div class="paragraph"><p>Text.</p></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_paragraphs">Paragraphs</h2>
+<div class="sectionbody">
+<div class="paragraph"><div class="title">Optional Title</div><p>Usual
+paragraph.</p></div>
+<div class="paragraph"><p>Second paragraph.</p></div>
+<div class="literalblock">
+<div class="title">Optional Title</div>
+<div class="content">
+<pre><code>Literal paragraph.
+ Must be indented.</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title">Optional Title</div>
+<div class="content"></div></div>
+<div class="paragraph"><p>Not a code in next paragraph.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">Optional Title</div>This is an example
+      single-paragraph note.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">Optional Title</div>This is an example
+single-paragraph note.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Tip</div>
+</td>
+<td class="content">Some tip text.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">Some important text.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">Some warning text.</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">Some caution text.</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_blocks">Blocks</h2>
+<div class="sectionbody">
+<div class="listingblock">
+<div class="title">Optional Title</div>
+<div class="content">
+<pre><code>*Listing* Block
+
+Use: code or file listings</code></pre>
+</div></div>
+<div class="listingblock">
+<div class="title">Optional Title</div>
+<div class="content"></div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">Optional Title</div>
+<div class="paragraph"><p><strong>NOTE</strong> Block</p></div>
+<div class="paragraph"><p>Use: multi-paragraph notes.</p></div>
+</td>
+</tr></table>
+</div>
+<div class="quoteblock">
+<div class="title">Optional Title</div>
+<div class="content">
+<div class="paragraph"><p><strong>Quote</strong> Block</p></div>
+<div class="paragraph"><p>Use: cite somebody</p></div>
+</div>
+<div class="attribution">
+<em>cite source</em><br />
+&#8212; cite author
+</div></div>
+<div class="literalblock">
+<div class="title">Optional Title</div>
+<div class="content">
+<pre><code>*Literal* Block
+
+Use: workaround when literal
+paragraph (indented) like
+  1. First.
+  2. Second.
+incorrectly processed as list.</code></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_text">Text</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>forced<br />
+line break</p></div>
+<div class="paragraph"><p>normal, <em>italic</em>, <em>italic</em>, <strong>bold</strong>.</p></div>
+<div class="paragraph"><p><code>mono <strong>bold</strong></code>, <code>mono pass thru *bold*</code></p></div>
+<div class="paragraph"><p>&#8220;double quoted&#8221;, &#8216;single quoted&#8217;.</p></div>
+<div class="paragraph"><p>normal, <sup>super</sup>, <sub>sub</sub>.</p></div>
+<div class="paragraph"><p>Chars: n<em>i</em><strong>b</strong><code>m</code>n</p></div>
+<div class="paragraph"><p>&#169; &#174; &#8482;&#8201;&#8212;&#8201;&#8230; &#8594; &#8592; &#8658; &#8656; &#182;</p></div>
+<hr />
+<div class="paragraph"><p>Escaped:
+_italic_, _italic_,
+t__e__st, t__e__st,
+&amp;#182;</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_macros_links_images">Macros: links, images</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>If you&#8217;ll need to use space in url/path you should replace it with %20.</p></div>
+<div class="paragraph" id="anchor-1"><p>Paragraph or block 1.</p></div>
+<div class="paragraph"><p><a href="#anchor-1">[anchor-1]</a>,
+<a href="#anchor-1">First anchor</a>,
+<a href="#anchor-1">[anchor-1]</a>,
+<a href="#anchor-1">First anchor</a>.</p></div>
+<div class="paragraph"><p><a href="http://google.com">http://google.com</a>
+<a href="http://google.com">Google Search</a>
+<a href="mailto:root@localhost">email admin</a></p></div>
+<div class="paragraph"><p>First home
+<span class="image">
+<img src="images/icons/home.png" alt="images/icons/home.png" />
+</span>
+, second home
+<span class="image">
+<img src="images/icons/home.png" alt="Alt text" />
+</span>
+.</p></div>
+<div class="imageblock">
+<div class="content">
+<img src="images/icons/home.png" alt="images/icons/home.png" />
+</div>
+<div class="title">Figure 1. Block image</div>
+</div>
+<div class="imageblock">
+<div class="content">
+<img src="images/icons/home.png" alt="Alt text" />
+</div>
+</div>
+<div class="paragraph"><div class="title">Thumbnail linked to full image</div><p><span class="image">
+<a class="image" href="/images/font/640-screen2.gif">
+<img src="/images/font/640-screen2.gif" alt="My screenshot" width="128" />
+</a>
+</span></p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_lists">Lists</h2>
+<div class="sectionbody">
+<div class="ulist"><div class="title">Bulleted</div><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+<div class="ulist"><div class="title">Bulleted 2</div><ul>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</li>
+</ul></div>
+<div class="olist arabic"><div class="title">Ordered</div><ol class="arabic">
+<li>
+<p>
+number
+</p>
+</li>
+<li>
+<p>
+number
+</p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+lower roman
+</p>
+</li>
+<li>
+<p>
+lower roman
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+number
+</p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+lower roman
+</p>
+</li>
+<li>
+<p>
+lower roman
+</p>
+<div class="olist lowerroman"><ol class="lowerroman">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+<div class="olist upperalpha"><ol class="upperalpha">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+<div class="olist upperroman"><ol class="upperroman">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+lower roman
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+<div class="olist loweralpha"><div class="title">Ordered 2</div><ol class="loweralpha">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+lower roman
+</p>
+</li>
+<li>
+<p>
+lower roman
+</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+lower roman
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+<div class="dlist"><div class="title">Labeled</div><dl>
+<dt class="hdlist1">
+Term 1
+</dt>
+<dd>
+<p>
+    Definition 1
+</p>
+</dd>
+<dt class="hdlist1">
+Term 2
+</dt>
+<dd>
+<p>
+    Definition 2
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Term 2.1
+</dt>
+<dd>
+<p>
+        Definition 2.1
+</p>
+</dd>
+<dt class="hdlist1">
+Term 2.2
+</dt>
+<dd>
+<p>
+        Definition 2.2
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+Term 3
+</dt>
+<dd>
+<p>
+    Definition 3
+</p>
+</dd>
+<dt class="hdlist1">
+Term 4
+</dt>
+<dd>
+<p>
+Definition 4
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Term 4.1
+</dt>
+<dd>
+<p>
+Definition 4.1
+</p>
+</dd>
+<dt class="hdlist1">
+Term 4.2
+</dt>
+<dd>
+<p>
+Definition 4.2
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Term 4.2.1
+</dt>
+<dd>
+<p>
+Definition 4.2.1
+</p>
+</dd>
+<dt class="hdlist1">
+Term 4.2.2
+</dt>
+<dd>
+<p>
+Definition 4.2.2
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+Term 4.3
+</dt>
+<dd>
+<p>
+Definition 4.3
+</p>
+</dd>
+</dl></div>
+</dd>
+<dt class="hdlist1">
+Term 5
+</dt>
+<dd>
+<p>
+Definition 5
+</p>
+</dd>
+</dl></div>
+<div class="dlist"><div class="title">Labeled 2</div><dl>
+<dt class="hdlist1">
+Term 1
+</dt>
+<dd>
+<p>
+    Definition 1
+</p>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+Term 1.1
+</dt>
+<dd>
+<p>
+        Definition 1.1
+</p>
+</dd>
+</dl></div>
+</dd>
+</dl></div>
+<div class="hdlist"><div class="title">Labeled horizontal</div><table>
+<tr>
+<td class="hdlist1">
+Term 1
+<br />
+</td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Definition 1
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Term 2
+<br />
+</td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Definition 2
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Term 3
+<br />
+</td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+    Definition 3
+</p>
+</td>
+</tr>
+<tr>
+<td class="hdlist1">
+Term 4
+<br />
+</td>
+<td class="hdlist2">
+<p style="margin-top: 0;">
+Definition 4
+</p>
+</td>
+</tr>
+</table></div>
+<div class="qlist qanda"><div class="title">Q&amp;A</div><ol>
+<li>
+<p><em>
+Question 1
+</em></p>
+<p>
+    Answer 1
+</p>
+</li>
+<li>
+<p><em>
+Question 2
+</em></p>
+<p>
+Answer 2
+</p>
+</li>
+</ol></div>
+<div class="olist arabic"><div class="title">Break two lists</div><ol class="arabic">
+<li>
+<p>
+number
+</p>
+</li>
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Independent paragraph break list.</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+<div class="olist arabic"><div class="title">Header break list too</div><ol class="arabic">
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+<div class="openblock">
+<div class="content">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+List block define list boundary too
+</p>
+</li>
+<li>
+<p>
+number
+</p>
+</li>
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+</div></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+number
+</p>
+</li>
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+<div class="ulist"><div class="title">Continuation</div><ul>
+<li>
+<p>
+bullet
+continuation
+</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+number
+  continuation
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><code>literal continuation</code></pre>
+</div></div>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+letter
+</p>
+<div class="paragraph"><p>Non-literal continuation.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><code>any block can be
+
+included in list</code></pre>
+</div></div>
+<div class="paragraph"><p>Last continuation.</p></div>
+</li>
+</ol></div>
+</li>
+</ul></div>
+</li>
+</ol></div>
+</li>
+</ul></div>
+<div class="ulist"><div class="title">List block allow sublist inclusion</div><ul>
+<li>
+<p>
+bullet
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+<div class="openblock">
+<div class="content">
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+<div class="ulist"><ul>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</div></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+bullet
+</p>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+number
+</p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+lower alpha
+</p>
+<div class="openblock">
+<div class="content">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</div></div>
+</li>
+<li>
+<p>
+lower alpha
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+number
+</p>
+</li>
+</ol></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_tables">Tables</h2>
+<div class="sectionbody">
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 1. An example table</caption>
+<col width="33%" />
+<col width="33%" />
+<col width="33%" />
+<thead>
+<tr>
+<th align="left" valign="top">Col 1</th>
+<th align="left" valign="top">Col 2      </th>
+<th align="left" valign="top">Col 3</th>
+</tr>
+</thead>
+<tfoot>
+<tr>
+<td align="left" valign="top"><p class="table">6</p></td>
+<td align="left" valign="top"><p class="table">Three items</p></td>
+<td align="left" valign="top"><p class="table">d</p></td>
+</tr>
+</tfoot>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">1</p></td>
+<td align="left" valign="top"><p class="table">Item 1</p></td>
+<td align="left" valign="top"><p class="table">a</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">2</p></td>
+<td align="left" valign="top"><p class="table">Item 2</p></td>
+<td align="left" valign="top"><p class="table">b</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">3</p></td>
+<td align="left" valign="top"><p class="table">Item 3</p></td>
+<td align="left" valign="top"><p class="table">c</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 2. CSV data</caption>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">1</p></td>
+<td align="left" valign="top"><p class="table">2</p></td>
+<td align="left" valign="top"><p class="table">3</p></td>
+<td align="left" valign="top"><p class="table">4</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">a</p></td>
+<td align="left" valign="top"><p class="table">b</p></td>
+<td align="left" valign="top"><p class="table">c</p></td>
+<td align="left" valign="top"><p class="table">d</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">A</p></td>
+<td align="left" valign="top"><p class="table">B</p></td>
+<td align="left" valign="top"><p class="table">C</p></td>
+<td align="left" valign="top"><p class="table">D</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<col width="20%" />
+<thead>
+<tr>
+<th align="left" valign="top">ID</th>
+<th align="left" valign="top">FName</th>
+<th align="left" valign="top">LName</th>
+<th align="left" valign="top">Address</th>
+<th align="left" valign="top">Phone</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">1</p></td>
+<td align="left" valign="top"><p class="table">Vasya</p></td>
+<td align="left" valign="top"><p class="table"><strong>Pupkin</strong></p></td>
+<td align="left" valign="top"><p class="table">London</p></td>
+<td align="left" valign="top"><p class="table"><code>+123</code></p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">2</p></td>
+<td align="left" valign="top"><p class="table">X</p></td>
+<td align="left" valign="top"><p class="table"><strong>Y</strong></p></td>
+<td align="left" valign="top"><p class="table">A,B</p></td>
+<td align="left" valign="top"><p class="table"><code>45678</code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="tableblock">
+<table rules="all"
+width="100%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<caption class="title">Table 3. Multiline cells, row/col span</caption>
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<col width="25%" />
+<tbody>
+<tr>
+<td align="left" valign="top"><p class="table">Date</p></td>
+<td align="left" valign="top"><p class="table">Duration</p></td>
+<td align="left" valign="top"><p class="table">Avg HR</p></td>
+<td align="left" valign="top"><p class="table">Notes</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">22-Aug-08</p></td>
+<td rowspan="2" align="center" valign="middle"><p class="table">10:24</p></td>
+<td align="left" valign="top"><p class="table">157</p></td>
+<td align="left" valign="top"><p class="table">Worked out MSHR (max sustainable
+heart rate) by going hard
+for this interval.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">22-Aug-08</p></td>
+<td align="left" valign="top"><p class="table">152</p></td>
+<td align="left" valign="top"><p class="table">Back-to-back with previous interval.</p></td>
+</tr>
+<tr>
+<td align="left" valign="top"><p class="table">24-Aug-08</p></td>
+<td colspan="3" align="center" valign="top"><p class="table">none</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated
+ 2018-12-09 09:30:23 Romance Standard Time
+</div>
+</div>
+</body>
+</html>
