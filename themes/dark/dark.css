@@ -4,23 +4,33 @@
  */
 
 /* Solarized Dark 
-For use with Jekyll and Pygments
-http://ethanschoonover.com/solarized
-SOLARIZED HEX      ROLE
---------- -------- ------------------------------------------
-base03    #002b36  background
-base01    #586e75  comments / secondary content
-base1     #93a1a1  body text / default code / primary content
-orange    #cb4b16  constants
-red       #dc322f  regex, special keywords
-blue      #268bd2  reserved keywords
-cyan      #2aa198  strings, numbers
-green     #859900  operators, other keywords
+Original Solarized color scheme developed by Ethan Schoonover es@ethanschoonover.com
+https://ethanschoonover.com/solarized/
+
+SOLARIZED HEX     16/8 TERMCOL  XTERM/HEX   L*A*B      RGB         HSB
+--------- ------- ---- -------  ----------- ---------- ----------- -----------
+base03    #002b36  8/4 brblack  234 #1c1c1c 15 -12 -12   0  43  54 193 100  21
+base02    #073642  0/4 black    235 #262626 20 -12 -12   7  54  66 192  90  26
+base01    #586e75 10/7 brgreen  240 #585858 45 -07 -07  88 110 117 194  25  46
+base00    #657b83 11/7 bryellow 241 #626262 50 -07 -07 101 123 131 195  23  51
+base0     #839496 12/6 brblue   244 #808080 60 -06 -03 131 148 150 186  13  59
+base1     #93a1a1 14/4 brcyan   245 #8a8a8a 65 -05 -02 147 161 161 180   9  63
+base2     #eee8d5  7/7 white    254 #e4e4e4 92 -00  10 238 232 213  44  11  93
+base3     #fdf6e3 15/7 brwhite  230 #ffffd7 97  00  10 253 246 227  44  10  99
+yellow    #b58900  3/3 yellow   136 #af8700 60  10  65 181 137   0  45 100  71
+orange    #cb4b16  9/3 brred    166 #d75f00 50  50  55 203  75  22  18  89  80
+red       #dc322f  1/1 red      160 #d70000 50  65  45 220  50  47   1  79  86
+magenta   #d33682  5/5 magenta  125 #af005f 50  65 -05 211  54 130 331  74  83
+violet    #6c71c4 13/5 brmagenta 61 #5f5faf 50  15 -45 108 113 196 237  45  77
+blue      #268bd2  4/4 blue      33 #0087ff 55 -10 -45  38 139 210 205  82  82
+cyan      #2aa198  6/6 cyan      37 #00afaf 60 -35 -05  42 161 152 175  74  63
+green     #859900  2/2 green     64 #5f8700 60 -20  65 133 153   0  68 100  60
+
 */
 
 body {
-    background-color: #002b36;
-    color: #93a1a1;
+    background-color: #002b36; /* base03  */
+    color: #839496; /* base0  */
     font-family: Arial,Helvetica,sans-serif;
     font-size: 14px;
     line-height: 20px;
@@ -41,21 +51,21 @@ thead, p.table.header,
 
 #toc a {
     border-bottom: 1px dotted #cb4b16;
-    color: #3A3A4D !important;
+    color: #93a1a1 !important;  /* base1 */
     text-decoration: none !important;
 }
 #toc a:hover {
     border-bottom: 1px solid #6D4100;
-    color: #6D4100 !important;
+    color: #93a1a1 !important; /* base1 */
     text-decoration: none !important;
 }
-a { color: #586e75; text-decoration: none; border-bottom: 1px dotted #586e75; }
-a:visited { color: #615FA0; border-bottom: 1px dotted #615FA0; }
-a:hover { color: #6D4100; border-bottom: 1px solid #6D4100; }
+a { color: #93a1a1; text-decoration: none; border-bottom: 1px dotted #586e75; /* base01 */ }
+a:visited { color: #93a1a1; border-bottom: 1px dotted #615FA0; }
+a:hover { color: #93a1a1; border-bottom: 1px solid #6D4100; }
 
 em {
   font-style: italic;
-  color: #cb4b16;
+  color: #859900;
 }
 
 strong {
@@ -64,13 +74,13 @@ strong {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #586e75;
+  color: #cb4b16; /* orange */
   margin-bottom: 0.5em;
   line-height: 1.3;
   letter-spacing:+0.15em;
 }
 
-h1, h2, h3 { border-bottom: 2px solid #ccd; }
+h1, h2, h3 { border-bottom: 2px solid  #cb4b16; /* orange */ }
 h2 { padding-top: 0.5em; }
 h3 { float: left; }
 h3 + * { clear: left; }
@@ -80,7 +90,7 @@ div.sectionbody {
 }
 
 hr {
-  border: 1px solid #cb4b16;
+  border: 1px solid #93a1a1;
 }
 
 p {
@@ -171,7 +181,7 @@ div.sidebarblock > div.content {
 
 div.listingblock > div.content {
   border: 1px solid silver;
-  background: #f4f4f4;
+  background: #073642; /* base02 */
   padding: 0.5em;
 }
 
@@ -263,11 +273,12 @@ div.compact div, div.compact div {
 }
 
 div.tableblock > table {
-  border: 3px solid #cb4b16;
+  border: 3px solid #93a1a1; /* base1 */
+  background-color: #002b36; /* base03  */
 }
 thead {
   font-weight: bold;
-  color: #cb4b16;
+  color: #93a1a1; /* base1 */
 }
 tfoot {
   font-weight: bold;
@@ -325,7 +336,7 @@ div.hdlist.compact tr {
 }
 
 #toctitle {
-  color: #586e75;
+  color: #586e75; /* base01 */
   font-size: 1.2em;
   font-weight: bold;
   margin-top: 1.0em;
@@ -347,8 +358,8 @@ body {
 
 .monospaced, tt, div.listingblock > div.content {
   font-family:  Consolas, "Andale Mono", "Courier New", monospace;
-  color: #004400;
-  background: #f4f4f4;
+  color: #93a1a1; /* base1 */ 
+  background: #073642; /* base02 */
   max-width: 80em;
   line-height: 1.2em;
 }
@@ -366,16 +377,16 @@ div.sectionbody div.ulist > ul > li {
   color: #aaa;
 }
   div.sectionbody div.ulist >  ul > li > * {
-    color: black;
+    color: #93a1a1; // base1
     /*font-size: 50%;*/
   }
 
 
 div.sectionbody div.ulist > ul > li div.ulist > ul > li {
-  color: #ccd ;
+  color: #586e75 ; /* base01 */
 }
   div.sectionbody div.ulist > ul > li div.ulist > ul > li > * {
-    color: black ;
+    /*color: #93a1a1 ; /* base1 */
   }
 
 em {
@@ -400,7 +411,7 @@ table.tableblock {
 }
 thead, p.tableblock.header {
   font-weight: bold;
-  color: #586e75;
+  color: #586e75;  /* base01 */
 }
 p.tableblock {
   margin-top: 0;
