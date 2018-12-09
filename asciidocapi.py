@@ -185,36 +185,33 @@ class AsciiDocAPI(object):
         # - current working directory (may be different from the directory of this file)
         fnames = ['asciidoc.py', 'asciidoc.pyc', 'asciidoc']
         cmd = os.environ.get('ASCIIDOC_PY')
+        is_cmd_valid = lambda c: c and os.path.isfile(c)
         if cmd:
             if not os.path.isfile(cmd):
                 raise AsciiDocError('missing ASCIIDOC_PY file: %s' % cmd)
 
-        if not os.path.isfile(cmd) and asciidoc_py:
+        if not is_cmd_valid(cmd) and asciidoc_py:
             # Next try path specified by caller.
             cmd = asciidoc_py
             if not os.path.isfile(cmd):
                 raise AsciiDocError('missing file: %s' % cmd)
 
-        if not os.path.isfile(cmd):
+        if not is_cmd_valid(cmd):
             # try to find sibling
             this_path = os.path.dirname(os.path.realpath(__file__))
-            # Try sibling paths.
-            for fname in fnames:
-                cmd = find_in_path(fname, path=this_path)
-                if cmd: break
+            candidates = (find_in_path(fname, this_path) for fname in fnames)
+            cmd = next((fname for fname in candidates if is_cmd_valid(fname)), None)
 
-        if not os.path.isfile(cmd):
+        if not is_cmd_valid(cmd):
             # Try shell search paths.
-            for fname in fnames:
-                cmd = find_in_path(fname)
-                if cmd: break
+            candidates = (find_in_path(fname) for fname in fnames)
+            cmd = next((fname for fname in candidates if is_cmd_valid(fname)), None)
 
-        if not os.path.isfile(cmd):
+        if not is_cmd_valid(cmd):
             # Finally try current working directory.
-            for cmd in fnames:
-                if os.path.isfile(cmd): break
+            cmd = next((fname for fname in fnames if is_cmd_valid(fname)), None)
 
-        if not os.path.isfile(cmd):
+        if not is_cmd_valid(cmd):
                 raise AsciiDocError('failed to locate asciidoc')
         self.cmd = os.path.realpath(cmd)
         self.__import_asciidoc()
